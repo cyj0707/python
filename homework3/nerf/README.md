@@ -1,124 +1,222 @@
-# NeRF: Neural Radiance Fields
-### [Project Page](http://tancik.com/nerf) | [Video](https://youtu.be/JuH79E8rdKc) | [Paper](https://arxiv.org/abs/2003.08934) | [Data](https://drive.google.com/drive/folders/128yBriW1IG_3NJ5Rp7APSTZsJqdJdfc1)
-[![Open Tiny-NeRF in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bmild/nerf/blob/master/tiny_nerf.ipynb)<br>
-Tensorflow implementation of optimizing a neural representation for a single scene and rendering new views.<br><br>
-[NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis](http://tancik.com/nerf)  
- [Ben Mildenhall](https://people.eecs.berkeley.edu/~bmild/)\*<sup>1</sup>,
- [Pratul P. Srinivasan](https://people.eecs.berkeley.edu/~pratul/)\*<sup>1</sup>,
- [Matthew Tancik](http://tancik.com/)\*<sup>1</sup>,
- [Jonathan T. Barron](http://jonbarron.info/)<sup>2</sup>,
- [Ravi Ramamoorthi](http://cseweb.ucsd.edu/~ravir/)<sup>3</sup>,
- [Ren Ng](https://www2.eecs.berkeley.edu/Faculty/Homepages/yirenng.html)<sup>1</sup> <br>
- <sup>1</sup>UC Berkeley, <sup>2</sup>Google Research, <sup>3</sup>UC San Diego  
-  \*denotes equal contribution  
-in ECCV 2020 (Oral Presentation, Best Paper Honorable Mention)
+# nerf_pl
 
-<img src='imgs/pipeline.jpg'/>
+### Update: an improved [NSFF](https://www.cs.cornell.edu/~zl548/NSFF/) implementation to handle dynamic scene is [open](https://github.com/kwea123/nsff_pl)!
 
-## TL;DR quickstart
+### Update: [NeRF-W](https://nerf-w.github.io/) (NeRF in the Wild) implementation is added to [nerfw](https://github.com/kwea123/nerf_pl/tree/nerfw) branch!
 
-To setup a conda environment, download example training data, begin the training process, and launch Tensorboard:
+### Update: The lastest code (using the latest libraries) will be updated to [dev](https://github.com/kwea123/nerf_pl/tree/dev) branch. The master branch remains to support the colab files. If you don't use colab, it is recommended to switch to dev branch.
+
+### Only issues of the dev and nerfw branch will be considered currently.
+
+### :gem: [**Project page**](https://kwea123.github.io/nerf_pl/) (live demo!)
+
+Unofficial implementation of [NeRF](https://arxiv.org/pdf/2003.08934.pdf) (Neural Radiance Fields) using pytorch ([pytorch-lightning](https://github.com/PyTorchLightning/pytorch-lightning)). This repo doesn't aim at reproducibility, but aim at providing a simpler and faster training procedure (also simpler code with detailed comments to help to understand the work). Moreover, I try to extend much more opportunities by integrating this algorithm into game engine like Unity.
+
+Official implementation: [nerf](https://github.com/bmild/nerf) .. Reference pytorch implementation: [nerf-pytorch](https://github.com/yenchenlin/nerf-pytorch)
+
+### Recommend to read: A detailed NeRF extension list: [awesome-NeRF](https://github.com/yenchenlin/awesome-NeRF)
+
+## :milky_way: Features
+
+* Multi-gpu training: Training on 8 GPUs finishes within 1 hour for the synthetic dataset!
+* [Colab](#mortar_board-colab) notebooks to allow easy usage!
+* [Reconstruct](#ribbon-mesh) **colored** mesh!
+* [Mixed Reality](https://youtu.be/S5phWFTs2iM) in Unity!
+* [REAL TIME volume rendering](https://youtu.be/w9qTbVzCdWk) in Unity!
+* [Portable Scenes](#portable-scenes) to let you play with other people's scenes!
+
+### You can find the Unity project including mesh, mixed reality and volume rendering [here](https://github.com/kwea123/nerf_Unity)! See [README_Unity](README_Unity.md) for generating your own data for Unity rendering!
+
+## :beginner: Tutorial
+
+### What can NeRF do?
+<img src="https://user-images.githubusercontent.com/11364490/82124460-1ccbbb80-97da-11ea-88ad-25e22868a5c1.png" style="max-width:100%">
+
+### Tutorial videos
+<a href="https://www.youtube.com/playlist?list=PLDV2CyUo4q-K02pNEyDr7DYpTQuka3mbV">
+<img src="https://user-images.githubusercontent.com/11364490/80913471-d5781080-8d7f-11ea-9f72-9d68402b8271.png">
+</a>
+   
+# :computer: Installation
+
+## Hardware
+
+* OS: Ubuntu 18.04
+* NVIDIA GPU with **CUDA>=10.1** (tested with 1 RTX2080Ti)
+
+## Software
+
+* Clone this repo by `git clone --recursive https://github.com/kwea123/nerf_pl`
+* Python>=3.6 (installation via [anaconda](https://www.anaconda.com/distribution/) is recommended, use `conda create -n nerf_pl python=3.6` to create a conda environment and activate it by `conda activate nerf_pl`)
+* Python libraries
+    * Install core requirements by `pip install -r requirements.txt`
+    * Install `torchsearchsorted` by `cd torchsearchsorted` then `pip install .`
+    
+# :key: Training
+
+Please see each subsection for training on different datasets. Available training datasets:
+
+* [Blender](#blender) (Realistic Synthetic 360)
+* [LLFF](#llff) (Real Forward-Facing)
+* [Your own data](#your-own-data) (Forward-Facing/360 inward-facing)
+
+## Blender
+<details>
+  <summary>Steps</summary>
+   
+### Data download
+
+Download `nerf_synthetic.zip` from [here](https://drive.google.com/drive/folders/128yBriW1IG_3NJ5Rp7APSTZsJqdJdfc1)
+
+### Training model
+
+Run (example)
 ```
-conda env create -f environment.yml
-conda activate nerf
-bash download_example_data.sh
-python run_nerf.py --config config_fern.txt
-tensorboard --logdir=logs/summaries --port=6006
-```
-If everything works without errors, you can now go to `localhost:6006` in your browser and watch the "Fern" scene train.
-
-## Setup
-
-Python 3 dependencies:
-
-* Tensorflow 1.15
-* matplotlib
-* numpy
-* imageio
-*  configargparse
-
-The LLFF data loader requires ImageMagick.
-
-We provide a conda environment setup file including all of the above dependencies. Create the conda environment `nerf` by running:
-```
-conda env create -f environment.yml
-```
-
-You will also need the [LLFF code](http://github.com/fyusion/llff) (and COLMAP) set up to compute poses if you want to run on your own real data.
-
-## What is a NeRF?
-
-A neural radiance field is a simple fully connected network (weights are ~5MB) trained to reproduce input views of a single scene using a rendering loss. The network directly maps from spatial location and viewing direction (5D input) to color and opacity (4D output), acting as the "volume" so we can use volume rendering to differentiably render new views.
-
-Optimizing a NeRF takes between a few hours and a day or two (depending on resolution) and only requires a single GPU. Rendering an image from an optimized NeRF takes somewhere between less than a second and ~30 seconds, again depending on resolution.
-
-
-## Running code
-
-Here we show how to run our code on two example scenes. You can download the rest of the synthetic and real data used in the paper [here](https://drive.google.com/drive/folders/128yBriW1IG_3NJ5Rp7APSTZsJqdJdfc1).
-
-### Optimizing a NeRF
-
-Run
-```
-bash download_example_data.sh
-```
-to get the our synthetic Lego dataset and the LLFF Fern dataset.
-
-To optimize a low-res Fern NeRF:
-```
-python run_nerf.py --config config_fern.txt
-```
-After 200k iterations (about 15 hours), you should get a video like this at `logs/fern_test/fern_test_spiral_200000_rgb.mp4`:
-
-![ferngif](https://people.eecs.berkeley.edu/~bmild/nerf/fern_200k_256w.gif)
-
-To optimize a low-res Lego NeRF:
-```
-python run_nerf.py --config config_lego.txt
-```
-After 200k iterations, you should get a video like this:
-
-![legogif](https://people.eecs.berkeley.edu/~bmild/nerf/lego_200k_256w.gif)
-
-### Rendering a NeRF
-
-Run
-```
-bash download_example_weights.sh
-```
-to get a pretrained high-res NeRF for the Fern dataset. Now you can use [`render_demo.ipynb`](https://github.com/bmild/nerf/blob/master/render_demo.ipynb) to render new views.
-
-### Replicating the paper results
-
-The example config files run at lower resolutions than the quantitative/qualitative results in the paper and video. To replicate the results from the paper, start with the config files in [`paper_configs/`](https://github.com/bmild/nerf/tree/master/paper_configs). Our synthetic Blender data and LLFF scenes are hosted [here](https://drive.google.com/drive/folders/128yBriW1IG_3NJ5Rp7APSTZsJqdJdfc1) and the DeepVoxels data is hosted by Vincent Sitzmann [here](https://drive.google.com/open?id=1lUvJWB6oFtT8EQ_NzBrXnmi25BufxRfl).
-
-### Extracting geometry from a NeRF
-
-Check out [`extract_mesh.ipynb`](https://github.com/bmild/nerf/blob/master/extract_mesh.ipynb) for an example of running marching cubes to extract a triangle mesh from a trained NeRF network. You'll need the install the [PyMCubes](https://github.com/pmneila/PyMCubes) package for marching cubes plus the [trimesh](https://github.com/mikedh/trimesh) and [pyrender](https://github.com/mmatl/pyrender) packages if you want to render the mesh inside the notebook:
-```
-pip install trimesh pyrender PyMCubes
+python train.py \
+   --dataset_name blender \
+   --root_dir $BLENDER_DIR \
+   --N_importance 64 --img_wh 400 400 --noise_std 0 \
+   --num_epochs 16 --batch_size 1024 \
+   --optimizer adam --lr 5e-4 \
+   --lr_scheduler steplr --decay_step 2 4 8 --decay_gamma 0.5 \
+   --exp_name exp
 ```
 
-## Generating poses for your own scenes
+These parameters are chosen to best mimic the training settings in the original repo. See [opt.py](opt.py) for all configurations.
 
-### Don't have poses?
+NOTE: the above configuration doesn't work for some scenes like `drums`, `ship`. In that case, consider increasing the `batch_size` or change the `optimizer` to `radam`. I managed to train on all scenes with these modifications.
 
-We recommend using the `imgs2poses.py` script from the [LLFF code](https://github.com/fyusion/llff). Then you can pass the base scene directory into our code using `--datadir <myscene>` along with `-dataset_type llff`. You can take a look at the `config_fern.txt` config file for example settings to use for a forward facing scene. For a spherically captured 360 scene, we recomment adding the `--no_ndc --spherify --lindisp` flags.
+You can monitor the training process by `tensorboard --logdir logs/` and go to `localhost:6006` in your browser.
+</details>
 
-### Already have poses!
+## LLFF
+<details>
+  <summary>Steps</summary>
+   
+### Data download
 
-In `run_nerf.py` and all other code, we use the same pose coordinate system as in OpenGL: the local camera coordinate system of an image is defined in a way that the X axis points to the right, the Y axis upwards, and the Z axis backwards as seen from the image.
+Download `nerf_llff_data.zip` from [here](https://drive.google.com/drive/folders/128yBriW1IG_3NJ5Rp7APSTZsJqdJdfc1)
 
-Poses are stored as 3x4 numpy arrays that represent camera-to-world transformation matrices. The other data you will need is simple pinhole camera intrinsics (`hwf = [height, width, focal length]`) and near/far scene bounds. Take a look at [our data loading code](https://github.com/bmild/nerf/blob/master/run_nerf.py#L406) to see more.
+### Training model
 
-## Citation
-
+Run (example)
 ```
-@inproceedings{mildenhall2020nerf,
-  title={NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis},
-  author={Ben Mildenhall and Pratul P. Srinivasan and Matthew Tancik and Jonathan T. Barron and Ravi Ramamoorthi and Ren Ng},
+python train.py \
+   --dataset_name llff \
+   --root_dir $LLFF_DIR \
+   --N_importance 64 --img_wh 504 378 \
+   --num_epochs 30 --batch_size 1024 \
+   --optimizer adam --lr 5e-4 \
+   --lr_scheduler steplr --decay_step 10 20 --decay_gamma 0.5 \
+   --exp_name exp
+```
+
+These parameters are chosen to best mimic the training settings in the original repo. See [opt.py](opt.py) for all configurations.
+
+You can monitor the training process by `tensorboard --logdir logs/` and go to `localhost:6006` in your browser.
+</details>
+
+## Your own data
+<details>
+  <summary>Steps</summary>
+   
+1. Install [COLMAP](https://github.com/colmap/colmap) following [installation guide](https://colmap.github.io/install.html)
+2. Prepare your images in a folder (around 20 to 30 for forward facing, and 40 to 50 for 360 inward-facing)
+3. Clone [LLFF](https://github.com/Fyusion/LLFF) and run `python img2poses.py $your-images-folder`
+4. Train the model using the same command as in [LLFF](#llff). If the scene is captured in a 360 inward-facing manner, add `--spheric` argument.
+
+For more details of training a good model, please see the video [here](#colab).
+</details>
+
+## Pretrained models and logs
+Download the pretrained models and training logs in [release](https://github.com/kwea123/nerf_pl/releases).
+
+## Comparison with other repos
+
+|           | training GPU memory in GB | Speed (1 step) |
+| :---:     |  :---:     | :---:   | 
+| [Original](https://github.com/bmild/nerf)  |  8.5 | 0.177s |
+| [Ref pytorch](https://github.com/yenchenlin/nerf-pytorch)  |  6.0 | 0.147s |
+| This repo | 3.2 | 0.12s |
+
+The speed is measured on 1 RTX2080Ti. Detailed profile can be found in [release](https://github.com/kwea123/nerf_pl/releases).
+Training memory is largely reduced, since the original repo loads the whole data to GPU at the beginning, while we only pass batches to GPU every step.
+
+# :mag_right: Testing
+
+See [test.ipynb](test.ipynb) for a simple view synthesis and depth prediction on 1 image.
+
+Use [eval.py](eval.py) to create the whole sequence of moving views.
+E.g.
+```
+python eval.py \
+   --root_dir $BLENDER \
+   --dataset_name blender --scene_name lego \
+   --img_wh 400 400 --N_importance 64 --ckpt_path $CKPT_PATH
+```
+**IMPORTANT** : Don't forget to add `--spheric_poses` if the model is trained under `--spheric` setting!
+
+It will create folder `results/{dataset_name}/{scene_name}` and run inference on all test data, finally create a gif out of them.
+
+Example of lego scene using pretrained model and the reconstructed **colored** mesh: (PSNR=31.39, paper=32.54)
+
+<p>
+<img src="https://user-images.githubusercontent.com/11364490/79932648-f8a1e680-8488-11ea-98fe-c11ec22fc8a1.gif" width="200">
+<img src="https://user-images.githubusercontent.com/11364490/80813179-822d8300-8c04-11ea-84e6-142f04714c58.png" width="200">
+</p>
+
+Example of fern scene using pretrained model:
+
+![fern](https://user-images.githubusercontent.com/11364490/79932650-f9d31380-8488-11ea-8dad-b70a6a3daa6e.gif)
+
+Example of own scene ([Silica GGO figure](https://www.youtube.com/watch?v=hVQIvEq_Av0)) and the reconstructed **colored** mesh. Click to link to youtube video.
+
+<p>
+<a href="https://youtu.be/yH1ZBcdNsUY">
+  <img src="https://user-images.githubusercontent.com/11364490/80279695-324d4880-873a-11ea-961a-d6350e149ece.gif" height="252">
+</a>
+<img src="https://user-images.githubusercontent.com/11364490/80813184-83f74680-8c04-11ea-8606-40580f753355.png" height="252">
+</p>
+
+## Portable scenes
+The concept of NeRF is that the whole scene is compressed into a NeRF model, then we can render from any pose we want. To render from plausible poses, we can leverage the training poses; therefore, you can generate video with **only** the trained model and the poses (hence the name of portable scenes). I provided my silica model in [release](https://github.com/kwea123/nerf_pl/releases), feel free to play around with it!
+
+If you trained some interesting scenes, you are also welcomed to share the model (and the `poses_bounds.npy`) by sending me an email, or post in issues! After all, a model is just around **5MB**! Please run `python utils/save_weights_only.py --ckpt_path $YOUR_MODEL_PATH` to extract the final model.
+
+# :ribbon: Mesh
+
+See [README_mesh](README_mesh.md) for reconstruction of **colored** mesh. Only supported for blender dataset and 360 inward-facing data!
+
+# :warning: Notes on differences with the original repo
+
+*  The learning rate decay in the original repo is **by step**, which means it decreases every step, here I use learning rate decay **by epoch**, which means it changes only at the end of 1 epoch.
+*  The validation image for LLFF dataset is chosen as the most centered image here, whereas the original repo chooses every 8th image.
+*  The rendering spiral path is slightly different from the original repo (I use approximate values to simplify the code).
+
+# :mortar_board: COLAB
+
+I also prepared colab notebooks that allow you to run the algorithm on any machine without GPU requirement.
+
+*  [colmap](https://gist.github.com/kwea123/f0e8f38ff2aa94495dbfe7ae9219f75c) to prepare camera poses for your own training data
+*  [nerf](https://gist.github.com/kwea123/a3c541a325e895ef79ecbc0d2e6d7221) to train on your data
+*  [extract_mesh](https://gist.github.com/kwea123/77ed1640f9bc9550136dc13a6a419e88) to extract colored mesh
+
+Please see [this playlist](https://www.youtube.com/playlist?list=PLDV2CyUo4q-K02pNEyDr7DYpTQuka3mbV) for the detailed tutorials.
+
+# :jack_o_lantern: SHOWOFF
+
+We can incorporate *ray tracing* techniques into the volume rendering pipeline, and realize realistic scene editing (following is the `materials` scene with an object removed, and a mesh is inserted and rendered with ray tracing). The code **will not** be released.
+
+![add](https://user-images.githubusercontent.com/11364490/90312710-92face00-df41-11ea-9eea-10f24849b407.gif)
+![add2](https://user-images.githubusercontent.com/11364490/90360796-92744b80-e097-11ea-859d-159aa2519375.gif)
+
+# :book: Citation
+If you use (part of) my code or find my work helpful, please consider citing
+```
+@misc{queianchen_nerf,
+  author={Quei-An, Chen},
+  title={Nerf_pl: a pytorch-lightning implementation of NeRF},
+  url={https://github.com/kwea123/nerf_pl/},
   year={2020},
-  booktitle={ECCV},
 }
 ```
